@@ -1,0 +1,11 @@
+CompileFlags:
+    CompilationDatabase: "build"
+
+Index:
+    StandardLibrary: true
+
+InlayHints:
+    Designators: true
+
+Completion:
+    HeaderInsertion: Never
