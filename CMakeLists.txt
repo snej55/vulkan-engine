@@ -54,29 +54,26 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SDL3)
 
-find_program(SLANG_COMPILER slangc 
-    HINTS "$ENV{VULKAN_SDK}/bin" 
-    REQUIRED
-)
+find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
 
-file(GLOB_RECURSE SHADER_SOURCES "src/shaders/*.slang")
+file(GLOB_RECURSE SHADER_SOURCES "${PROJECT_SOURCE_DIR}/src/shaders/*.glsl" "${PROJECT_SOURCE_DIR}/src/shaders/*.frag" "${PROJECT_SOURCE_DIR}/src/shaders/*.vert" "${PROJECT_SOURCE_DIR}/src/shaders/*.comp")
 
 foreach(SHADER ${SHADER_SOURCES})
-    get_filename_component(SHADER_NAME ${SHADER} NAME_WLE) # NAME_WLE: name without last extension
-    set(OUTPUT_SPV "${CMAKE_CURRENT_BINARY_DIR}/data/shaders/${SHADER_NAME}.spv")
-
-    get_filename_component(OUT_DIR ${OUTPUT_SPV} DIRECTORY)
-    file(MAKE_DIRECTORY ${OUT_DIR})
-
+    message(STATUS "Building ${SHADER}")
+    get_filename_component(SHADER_NAME ${SHADER} NAME)
+    set(SPIRV_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/data/shaders/${SHADER_NAME}.spv")
     add_custom_command(
-        OUTPUT ${OUTPUT_SPV}
-        COMMAND ${SLANG_COMPILER} ${SHADER} -target spirv -o ${OUTPUT_SPV}
-        DEPENDS ${SHADER}
-        COMMENT "Building SPIR-V: ${SHADER_NAME}.slang"
+	OUTPUT ${SPIRV_OUTPUT}
+	COMMAND ${GLSL_VALIDATOR} -V ${SHADER} -o ${SPIRV_OUTPUT}
+	DEPENDS ${SHADER}
     )
-
-    list(APPEND SPV_OUTPUTS ${OUTPUT_SPV})
+    list(APPEND SPV_OUTPUTS ${SPIRV_OUTPUT})
 endforeach()
+
+add_custom_target(
+    Shaders
+    DEPENDS ${SPV_OUTPUTS}
+)
 
 FetchContent_Declare(
     fmt
