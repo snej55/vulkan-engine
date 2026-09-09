@@ -1,0 +1,13 @@
+// Created by Jens Kromdijk 10/05/2026
+
+#ifndef CLOCK_H
+#define CLOCK_H
+
+#include <SDL3/SDL.h>
+
+class Clock
+{
+    Clock() = default;
+};
+
+#endif // CLOCK_H

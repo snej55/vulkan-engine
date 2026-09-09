@@ -1,16 +1,17 @@
 # TODO
 
- - [ ] SDL3 window setup with vulkan surface extension
- - [ ] Vulkan 1.3 instance + physical & logical device selection
- - [ ] Setup VMA for GPU memory allocations
+ - [X] SDL3 window setup with vulkan surface extension
+ - [X] Vulkan 1.3 instance + physical & logical device selection
+ - [X] Setup VMA for GPU memory allocations
  - [ ] Setup swapchain with resize handling
  - [ ] Dynamic rendering graphics pipeline
- - [ ] Clear screen with background color
+ - [X] Clear screen with background color
  - [ ] C-ABI ready for language bindings (C#, Julia, Python)
  - [ ] CFFI for python for stable ABI interface
  - [ ] P/Invoke for C#
  - [ ] Basic image loading / texture management
  - [ ] Load textures into GPU memory using VMA
+ - [ ] Github actions test
 
  - [ ] Create VkImageView & VkSampler pairs
  - [ ] Dynamic vertex buffer to batch 2D quads
