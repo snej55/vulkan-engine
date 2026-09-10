@@ -927,4 +927,42 @@ void Context::setupDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT& createInfo
     createInfo.pUserData = nullptr;
 }
 
-void Context::initImGUI() {}
+void Context::initImGUI()
+{
+    VkDescriptorPoolSize poolSizes[] = {
+        {VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+        {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+        {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+        {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+        {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+        {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
+
+    VkDescriptorPoolCreateInfo poolCI{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
+        .maxSets = 1000,
+        .poolSizeCount = static_cast<uint32_t>(std::size(poolSizes)),
+        .pPoolSizes = poolSizes};
+
+    VkDescriptorPool imguiPool;
+    VK_CHECK(vkCreateDescriptorPool(m_device, &poolCI, nullptr, &imguiPool));
+
+    ImGui::CreateContext();
+
+    ImGui_ImplSDL3_InitForVulkan(m_window);
+
+    ImGui_ImplVulkan_InitInfo initInfo{
+        .Instance = m_instance,
+        .PhysicalDevice = m_physicalDevice,
+        .Device = m_device,
+        .Queue = m_graphicsQueue,
+        .DescriptorPool = imguiPool,
+        .MinImageCount = 3,
+        .ImageCount = 3,
+        .UseDynamicRendering = true};
+
+    // initInfo.PipelineRenderingCreateInfo = {.s}
+}
