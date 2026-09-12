@@ -3,22 +3,51 @@
 #include <fmt/base.h>
 
 #include <cstdlib>
+#include <exception>
+#include <memory>
 
 #define _DEBUG
-#include "src/engine.h"
+#include "src/vk_engine.h"
+
+class App
+{
+public:
+    App() = default;
+
+    void run()
+    {
+        init();
+        mainLoop();
+        free();
+    }
+
+private:
+    // initialize vulkan context and other stuff
+    void init()
+    {
+        m_engine = std::make_unique<VkEngine>(VkEngine{});
+        m_engine->init();
+    }
+
+    // main rendering loop
+    void mainLoop() {}
+
+    // free resources
+    void free() { m_engine->free(); }
+
+    std::unique_ptr<VkEngine> m_engine{nullptr};
+};
 
 int main()
 {
-    Engine engine{};
     fmt::println("Running...");
 
     try
     {
-        engine.init();
-        engine.run();
-        engine.free();
+        App app{};
+        app.run();
     }
-    catch (std::exception& e)
+    catch (const std::exception& e)
     {
         fmt::println("{}", e.what());
         return EXIT_FAILURE;
@@ -28,4 +57,3 @@ int main()
 
     return EXIT_SUCCESS;
 }
-

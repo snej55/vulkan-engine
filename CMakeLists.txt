@@ -107,7 +107,7 @@ add_library(imgui STATIC ${IMGUI_SOURCES})
 target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 target_link_libraries(imgui PUBLIC Vulkan::Vulkan SDL3::SDL3-shared)
 
-set(SOURCES main.cpp src/clock.cpp src/engine.cpp src/vk_context.cpp src/vk_context_impl.cpp src/vk_image.cpp src/vk_init.cpp src/vk_pipelines.cpp src/vulkan_impl.cpp)
+set(SOURCES main.cpp src/vk_engine.h src/vk_engine.cpp)
 
 add_executable(${NAME} ${SOURCES})
 target_sources(${NAME} PRIVATE ${SPV_OUTPUTS})

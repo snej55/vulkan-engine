@@ -26,32 +26,59 @@
 #define BEGIN_LOG "\033[36m"
 #define END_LOG "\033[m"
 
-#define VK_CHECK(func)                                                                                                                                                                                 \
-    {                                                                                                                                                                                                  \
-        const VkResult result{func};                                                                                                                                                                   \
-        if (result != VK_SUCCESS)                                                                                                                                                                      \
-        {                                                                                                                                                                                              \
-            fmt::print(stderr, "{}{}: Error calling function {} at {}:{}. Result: ({}){}\n", BEGIN_ERROR, "FATAL", #func, __FILE__, __LINE__, (int)result, END_ERROR);                                 \
-            const std::string msg{fmt::format("{}{}: Error calling function {} at {}:{}. Result: ({}){}\n", BEGIN_ERROR, "FATAL", #func, __FILE__, __LINE__, (int)result, END_ERROR)};                 \
-            const EngineResult error{nullptr, -1, result, nullptr};                                                                                                                                    \
-            throw EngineException(error, msg);                                                                                                                                                         \
-        }                                                                                                                                                                                              \
+#define VK_CHECK(func)                                                                                                 \
+    {                                                                                                                  \
+        const VkResult result{func};                                                                                   \
+        if (result != VK_SUCCESS)                                                                                      \
+        {                                                                                                              \
+            fmt::print(                                                                                                \
+                stderr,                                                                                                \
+                "{}{}: Error calling function {} at {}:{}. Result: ({}){}\n",                                          \
+                BEGIN_ERROR,                                                                                           \
+                "FATAL",                                                                                               \
+                #func,                                                                                                 \
+                __FILE__,                                                                                              \
+                __LINE__,                                                                                              \
+                (int)result,                                                                                           \
+                END_ERROR);                                                                                            \
+            const std::string msg{fmt::format(                                                                         \
+                "{}{}: Error calling function {} at {}:{}. Result: ({}){}\n",                                          \
+                BEGIN_ERROR,                                                                                           \
+                "FATAL",                                                                                               \
+                #func,                                                                                                 \
+                __FILE__,                                                                                              \
+                __LINE__,                                                                                              \
+                (int)result,                                                                                           \
+                END_ERROR)};                                                                                           \
+            const EngineResult error{nullptr, -1, result, nullptr};                                                    \
+            throw EngineException(error, msg);                                                                         \
+        }                                                                                                              \
     }
 
-#define CHECK(func)                                                                                                                                                                                    \
-    {                                                                                                                                                                                                  \
-        if (!func)                                                                                                                                                                                     \
-        {                                                                                                                                                                                              \
-            fmt::print(stderr, "{}Error calling function {} at {}:{}{}\n", BEGIN_ERROR, #func, __FILE__, __LINE__, END_ERROR);                                                                         \
-            const std::string msg{fmt::format("{}Error calling function {} at {}:{}{}\n", BEGIN_ERROR, #func, __FILE__, __LINE__, END_ERROR)};                                                         \
-            throw EngineException(EngineResult{nullptr, -1, VK_SUCCESS, nullptr}, msg);                                                                                                                \
-        }                                                                                                                                                                                              \
+#define CHECK(func)                                                                                                    \
+    {                                                                                                                  \
+        if (!func)                                                                                                     \
+        {                                                                                                              \
+            fmt::print(                                                                                                \
+                stderr,                                                                                                \
+                "{}Error calling function {} at {}:{}{}\n",                                                            \
+                BEGIN_ERROR,                                                                                           \
+                #func,                                                                                                 \
+                __FILE__,                                                                                              \
+                __LINE__,                                                                                              \
+                END_ERROR);                                                                                            \
+            const std::string msg{fmt::format(                                                                         \
+                "{}Error calling function {} at {}:{}{}\n", BEGIN_ERROR, #func, __FILE__, __LINE__, END_ERROR)};       \
+            throw EngineException(EngineResult{nullptr, -1, VK_SUCCESS, nullptr}, msg);                                \
+        }                                                                                                              \
     }
 
-#define CRASHOUT()                                                                                                                                                                                     \
-    {                                                                                                                                                                                                  \
-        fmt::print(stderr, "{}Crashed out at {}:{}{}\n", BEGIN_ERROR, __FILE__, __LINE__, END_ERROR);                                                                                                  \
-        throw EngineException(EngineResult{nullptr, -1, VK_SUCCESS, nullptr}, fmt::format("{}Crashed out at {}:{}{}\n", BEGIN_ERROR, __FILE__, __LINE__, END_ERROR));                                  \
+#define CRASHOUT()                                                                                                     \
+    {                                                                                                                  \
+        fmt::print(stderr, "{}Crashed out at {}:{}{}\n", BEGIN_ERROR, __FILE__, __LINE__, END_ERROR);                  \
+        throw EngineException(                                                                                         \
+            EngineResult{nullptr, -1, VK_SUCCESS, nullptr},                                                            \
+            fmt::format("{}Crashed out at {}:{}{}\n", BEGIN_ERROR, __FILE__, __LINE__, END_ERROR));                    \
     }
 
 namespace Util
@@ -72,17 +99,26 @@ namespace Util
         return true;
     }
 
-    inline std::unordered_set<std::string> filterExtensions(std::vector<std::string> availableExtensions, std::vector<std::string> requestedExtensions)
+    inline std::unordered_set<std::string>
+    filterExtensions(std::vector<std::string> availableExtensions, std::vector<std::string> requestedExtensions)
     {
         std::sort(availableExtensions.begin(), availableExtensions.end());
         std::sort(requestedExtensions.begin(), requestedExtensions.end());
 
         std::vector<std::string> result{};
-        std::set_intersection(availableExtensions.begin(), availableExtensions.end(), requestedExtensions.begin(), requestedExtensions.end(), std::back_inserter(result));
+        std::set_intersection(
+            availableExtensions.begin(),
+            availableExtensions.end(),
+            requestedExtensions.begin(),
+            requestedExtensions.end(),
+            std::back_inserter(result));
         return std::unordered_set<std::string>(result.begin(), result.end());
     }
 
-    inline std::unordered_set<std::string> filterExtensions(std::vector<std::string> availableExtensions, const char** requestedExtensions, const uint32_t requestedExtensionsCount)
+    inline std::unordered_set<std::string> filterExtensions(
+        std::vector<std::string> availableExtensions,
+        const char** requestedExtensions,
+        const uint32_t requestedExtensionsCount)
     {
         // convert to std::vector<std::string> first
         std::vector<std::string> requestedExtensionsVec(static_cast<std::size_t>(requestedExtensionsCount));
