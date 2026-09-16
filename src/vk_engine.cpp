@@ -13,6 +13,41 @@ void VkEngine::init()
     initVulkan();
 }
 
+void VkEngine::free()
+{
+    // vkDeviceWaitIdle(m_device);
+#ifdef _DEBUG
+    if (m_debugMessenger != VK_NULL_HANDLE)
+    {
+        vkDestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
+    }
+#endif
+    /*
+        // clean up sync structures (as well as command pool ofc)
+        for (std::size_t i{0}; i < FRAME_OVERLAP; ++i)
+        {
+            vkDestroyCommandPool(m_device, m_frames[i].m_commandPool, nullptr);
+
+            vkDestroyFence(m_device, m_frames[i].m_renderFence, nullptr);
+            vkDestroySemaphore(m_device, m_frames[i].m_swapchainSemaphore, nullptr);
+            m_frames[i].m_deletionQueue.flush();
+        }
+        m_deletionQueue.flush();
+
+        vmaDestroyAllocator(m_allocator);
+
+        freeSwapchain();
+
+        vkDestroyDevice(m_device, nullptr);
+        vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+        */
+    vkDestroyInstance(m_instance, nullptr);
+
+    SDL_DestroyWindow(m_window);
+
+    fmt::println("Cleaned up!");
+}
+
 void VkEngine::initWindow()
 {
     CHECK(SDL_Init(SDL_INIT_VIDEO));
@@ -169,6 +204,26 @@ void VkEngine::createInstance()
     }
 #endif
     return availableExtensions;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL VkEngine::debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData)
+{
+    std::string colorCode{BEGIN_LOG};
+    if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    {
+        colorCode = BEGIN_ERROR;
+    }
+    else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    {
+        colorCode = BEGIN_WARNING;
+    }
+
+    fmt::println(stderr, "{}Validation layer: {}{}", colorCode, pCallbackData->pMessage, END_LOG);
+    return VK_FALSE;
 }
 
 void VkEngine::setupDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
