@@ -3,6 +3,8 @@
 #ifndef VK_ENGINE_H
 #define VK_ENGINE_H
 
+#define _DEBUG
+
 #include <vulkan/vulkan.h>
 #include <volk/volk.h>
 
@@ -12,6 +14,10 @@
 #include <SDL3/SDL_vulkan.h>
 
 #include <fmt/base.h>
+
+#include <unordered_set>
+#include <string>
+#include <vector>
 
 class VkEngine
 {
@@ -26,10 +32,29 @@ public:
 private:
     SDL_Window* m_window{nullptr};
 
+    // --------- Vulkan components --------- //
+    std::unordered_set<std::string> m_enabledInstanceLayers{};
+    std::unordered_set<std::string> m_enabledInstanceExtensions{};
+
+    VkDebugUtilsMessengerEXT m_debugMessenger{VK_NULL_HANDLE};
+
+    VkInstance m_instance{VK_NULL_HANDLE};
+
     void initWindow();
     void initVulkan();
 
     void createInstance();
+
+    [[nodiscard]] std::vector<std::string> enumerateInstanceLayers();
+    [[nodiscard]] std::vector<std::string> enumerateInstanceExtensions();
+
+    // ----------- validation layers ----------- //
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData);
+    void setupDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 };
 
 #endif // VK_ENGINE_H
