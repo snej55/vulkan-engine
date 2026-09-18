@@ -39,11 +39,15 @@ private:
     VkDebugUtilsMessengerEXT m_debugMessenger{VK_NULL_HANDLE};
 
     VkInstance m_instance{VK_NULL_HANDLE};
+    VkPhysicalDevice m_physicalDevice{VK_NULL_HANDLE};
 
     void initWindow();
     void initVulkan();
 
     void createInstance();
+    void selectPhysicalDevice();
+    [[nodiscard]] bool deviceSuitable(VkPhysicalDevice device) const;
+    [[nodiscard]] bool checkDeviceExtensionsSupport(VkPhysicalDevice device) const;
 
     [[nodiscard]] std::vector<std::string> enumerateInstanceLayers();
     [[nodiscard]] std::vector<std::string> enumerateInstanceExtensions();

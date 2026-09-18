@@ -5,7 +5,8 @@
 #include "constants.h"
 
 #include <vector>
-
+#include <map>
+#include <set>
 
 void VkEngine::init()
 {
@@ -204,6 +205,89 @@ void VkEngine::createInstance()
     }
 #endif
     return availableExtensions;
+}
+
+void VkEngine::selectPhysicalDevice()
+{
+    fmt::println("Selecting physical device...");
+    uint32_t physicalDeviceCount{0};
+    VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &physicalDeviceCount, nullptr));
+    CHECK((physicalDeviceCount != 0));
+    std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
+    VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &physicalDeviceCount, physicalDevices.data()));
+
+    std::multimap<int, VkPhysicalDevice> options{};
+    for (const VkPhysicalDevice& device : physicalDevices)
+    {
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+        VkPhysicalDeviceFeatures deviceFeatures;
+        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+        int score{0};
+
+        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        {
+            score += 1000;
+        }
+
+        score += static_cast<int>(deviceProperties.limits.maxImageDimension2D);
+        if (!deviceFeatures.geometryShader) // we need geometry shader support
+            continue;
+
+        if (!(deviceProperties.apiVersion >= VK_API_VERSION_1_3)) // we need at least 1.3
+            continue;
+
+        options.insert(std::make_pair(score, device));
+    }
+
+    CHECK((!options.empty() && options.rbegin()->first > 0))
+    m_physicalDevice = options.rbegin()->second;
+
+    CHECK((m_physicalDevice != VK_NULL_HANDLE));
+
+#ifdef _DEBUG
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(m_physicalDevice, &deviceProperties);
+    fmt::println("Selected physical device: ");
+    fmt::println("\t{}", deviceProperties.deviceName);
+#endif
+}
+
+[[nodiscard]] bool VkEngine::deviceSuitable(VkPhysicalDevice device) const
+{
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    if (!deviceFeatures.geometryShader)
+        return false;
+
+    if (!(deviceProperties.apiVersion >= VK_API_VERSION_1_3))
+        return false;
+
+    if (!checkDeviceExtensionsSupport(device))
+        return false;
+
+    return true;
+}
+
+[[nodiscard]] bool VkEngine::checkDeviceExtensionsSupport(VkPhysicalDevice device) const
+{
+    uint32_t extensionCount;
+    VK_CHECK(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr));
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    VK_CHECK(vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data()));
+
+    std::set<std::string> requiredExtensions(CST::deviceExtensions.begin(), CST::deviceExtensions.end());
+
+    for (const VkExtensionProperties& extension : availableExtensions)
+    {
+        requiredExtensions.erase(extension.extensionName);
+    }
+
+    return requiredExtensions.empty();
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VkEngine::debugCallback(
