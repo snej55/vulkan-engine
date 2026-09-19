@@ -18,6 +18,15 @@
 #include <unordered_set>
 #include <string>
 #include <vector>
+#include <optional>
+
+struct QueueFamilyIndices
+{
+    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
+
+    bool complete() const { return graphicsFamily.has_value() && presentFamily.has_value(); }
+};
 
 class VkEngine
 {
@@ -48,6 +57,7 @@ private:
     void selectPhysicalDevice();
     [[nodiscard]] bool deviceSuitable(VkPhysicalDevice device) const;
     [[nodiscard]] bool checkDeviceExtensionsSupport(VkPhysicalDevice device) const;
+    [[nodiscard]] QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
 
     [[nodiscard]] std::vector<std::string> enumerateInstanceLayers();
     [[nodiscard]] std::vector<std::string> enumerateInstanceExtensions();

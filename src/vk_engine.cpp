@@ -290,6 +290,46 @@ void VkEngine::selectPhysicalDevice()
     return requiredExtensions.empty();
 }
 
+[[nodiscard]] QueueFamilyIndices VkEngine::findQueueFamilies(VkPhysicalDevice device) const
+{
+    QueueFamilyIndices indices;
+
+    uint32_t queueFamilyCount{0};
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    fmt::println("Got queue families...");
+
+    int i{0};
+    for (const VkQueueFamilyProperties& queueFamily : queueFamilies)
+    {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        {
+            indices.graphicsFamily = i;
+        }
+        fmt::println("Checked graphics bit...");
+
+        // NOTE: Gives seg fault if surface hasn't been created yet
+        VkBool32 presentSupport{false};
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
+        if (presentSupport)
+        {
+            indices.presentFamily = i;
+        }
+
+        fmt::println("Checked presentation support...");
+
+        if (indices.complete())
+        {
+            break;
+        }
+        ++i;
+    }
+
+    return indices;
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL VkEngine::debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
