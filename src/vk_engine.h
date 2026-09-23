@@ -23,9 +23,9 @@
 struct QueueFamilyIndices
 {
     std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
+    // std::optional<uint32_t> presentFamily;
 
-    bool complete() const { return graphicsFamily.has_value() && presentFamily.has_value(); }
+    bool complete() const { return graphicsFamily.has_value(); } //  && presentFamily.has_value(); }
 };
 
 class VkEngine

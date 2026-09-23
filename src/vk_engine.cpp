@@ -63,6 +63,7 @@ void VkEngine::initVulkan()
     volkInitialize();
 
     createInstance();
+    selectPhysicalDevice();
 }
 
 void VkEngine::createInstance()
@@ -225,19 +226,30 @@ void VkEngine::selectPhysicalDevice()
         vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
         int score{0};
 
-        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        switch (deviceProperties.deviceType)
         {
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
             score += 1000;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+            score += 900;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+            score += 800;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_CPU:
+            score += 700;
+            break;
+        default:
+            break;
         }
 
         score += static_cast<int>(deviceProperties.limits.maxImageDimension2D);
-        if (!deviceFeatures.geometryShader) // we need geometry shader support
-            continue;
-
-        if (!(deviceProperties.apiVersion >= VK_API_VERSION_1_3)) // we need at least 1.3
+        if (!deviceSuitable(device))
             continue;
 
         options.insert(std::make_pair(score, device));
+        // fmt::println("\t{}", deviceProperties.deviceName);
     }
 
     CHECK((!options.empty() && options.rbegin()->first > 0))
@@ -260,13 +272,17 @@ void VkEngine::selectPhysicalDevice()
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-    if (!deviceFeatures.geometryShader)
+    if (!deviceFeatures.geometryShader) // application requires geometry shaders support
         return false;
 
-    if (!(deviceProperties.apiVersion >= VK_API_VERSION_1_3))
+    if (!(deviceProperties.apiVersion >= VK_API_VERSION_1_3)) // we need at least 1.3
         return false;
 
     if (!checkDeviceExtensionsSupport(device))
+        return false;
+
+    QueueFamilyIndices indices{findQueueFamilies(device)};
+    if (!indices.complete())
         return false;
 
     return true;
@@ -299,8 +315,6 @@ void VkEngine::selectPhysicalDevice()
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-    fmt::println("Got queue families...");
-
     int i{0};
     for (const VkQueueFamilyProperties& queueFamily : queueFamilies)
     {
@@ -308,17 +322,16 @@ void VkEngine::selectPhysicalDevice()
         {
             indices.graphicsFamily = i;
         }
-        fmt::println("Checked graphics bit...");
 
-        // NOTE: Gives seg fault if surface hasn't been created yet
-        VkBool32 presentSupport{false};
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
-        if (presentSupport)
-        {
-            indices.presentFamily = i;
-        }
+        // // NOTE: Gives seg fault if surface hasn't been created yet
+        // VkBool32 presentSupport{false};
+        // vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
+        // if (presentSupport)
+        // {
+        //     indices.presentFamily = i;
+        // }
 
-        fmt::println("Checked presentation support...");
+        // fmt::println("Checked presentation support...");
 
         if (indices.complete())
         {
