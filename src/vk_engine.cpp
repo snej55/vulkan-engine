@@ -160,7 +160,6 @@ void VkEngine::createInstance()
 
 [[nodiscard]] std::vector<std::string> VkEngine::enumerateInstanceLayers()
 {
-
     uint32_t instanceLayerCount{0};
     VK_CHECK(vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr));
     std::vector<VkLayerProperties> layers(instanceLayerCount);
@@ -185,7 +184,6 @@ void VkEngine::createInstance()
 
 [[nodiscard]] std::vector<std::string> VkEngine::enumerateInstanceExtensions()
 {
-
     uint32_t instanceExtensionCount{0};
     VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionCount, nullptr));
     std::vector<VkExtensionProperties> extensions(instanceExtensionCount);
@@ -210,7 +208,6 @@ void VkEngine::createInstance()
 
 void VkEngine::selectPhysicalDevice()
 {
-    fmt::println("Selecting physical device...");
     uint32_t physicalDeviceCount{0};
     VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &physicalDeviceCount, nullptr));
     CHECK((physicalDeviceCount != 0));
@@ -342,6 +339,8 @@ void VkEngine::selectPhysicalDevice()
 
     return indices;
 }
+
+void VkEngine::createLogicalDevice() {}
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VkEngine::debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

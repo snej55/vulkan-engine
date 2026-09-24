@@ -55,6 +55,7 @@ private:
 
     void createInstance();
     void selectPhysicalDevice();
+    void createLogicalDevice();
     [[nodiscard]] bool deviceSuitable(VkPhysicalDevice device) const;
     [[nodiscard]] bool checkDeviceExtensionsSupport(VkPhysicalDevice device) const;
     [[nodiscard]] QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
