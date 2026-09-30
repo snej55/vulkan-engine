@@ -64,6 +64,7 @@ void VkEngine::initVulkan()
 
     createInstance();
     selectPhysicalDevice();
+    createLogicalDevice();
 }
 
 void VkEngine::createInstance()
@@ -370,6 +371,35 @@ void VkEngine::createLogicalDevice()
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
         .pNext = &features13,
         .shaderDrawParameters = VK_TRUE};
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+    VkDeviceCreateInfo createInfo{
+        .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+        .pNext = &features11,
+        .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
+        .pQueueCreateInfos = queueCreateInfos.data(),
+        .pEnabledFeatures = &deviceFeatures};
+
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(CST::deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = CST::deviceExtensions.data();
+
+#ifdef _DEBUG
+    std::vector<const char*> instanceLayers(m_enabledInstanceLayers.size());
+    std::transform(
+        m_enabledInstanceLayers.begin(),
+        m_enabledInstanceLayers.end(),
+        instanceLayers.begin(),
+        std::mem_fn(&std::string::c_str));
+    createInfo.enabledLayerCount = static_cast<uint32_t>(instanceLayers.size());
+    createInfo.ppEnabledLayerNames = instanceLayers.data();
+#else
+    createInfo.enabledLayerCount = 0;
+#endif
+
+    VK_CHECK(vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device));
+    volkLoadDevice(m_device);
+
+    vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VkEngine::debugCallback(
