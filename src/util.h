@@ -83,6 +83,8 @@
 
 namespace Util
 {
+    inline float random() { return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX); }
+
     inline bool checkSwapchain(VkResult result, bool* updateSwapchain)
     {
         if (result < VK_SUCCESS)

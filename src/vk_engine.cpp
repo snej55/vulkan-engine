@@ -8,6 +8,8 @@
 #include <map>
 #include <set>
 
+#include <SDL3/SDL_vulkan.h>
+
 void VkEngine::init()
 {
     initWindow();
@@ -63,6 +65,7 @@ void VkEngine::initVulkan()
     volkInitialize();
 
     createInstance();
+    createSurface();
     selectPhysicalDevice();
     createLogicalDevice();
 }
@@ -321,15 +324,13 @@ void VkEngine::selectPhysicalDevice()
             indices.graphicsFamily = i;
         }
 
-        // // NOTE: Gives seg fault if surface hasn't been created yet
-        // VkBool32 presentSupport{false};
-        // vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
-        // if (presentSupport)
-        // {
-        //     indices.presentFamily = i;
-        // }
-
-        // fmt::println("Checked presentation support...");
+        // NOTE: Gives seg fault if surface hasn't been created yet
+        VkBool32 presentSupport{false};
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
+        if (presentSupport)
+        {
+            indices.presentFamily = i;
+        }
 
         if (indices.complete())
         {
@@ -347,7 +348,7 @@ void VkEngine::createLogicalDevice()
     m_queueFamilyIndices = indices;
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
-    std::set<uint32_t> uniqueQueueFamilies{indices.graphicsFamily.value()};
+    std::set<uint32_t> uniqueQueueFamilies{indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     float queuePriority{1.0f};
     for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -400,7 +401,10 @@ void VkEngine::createLogicalDevice()
     volkLoadDevice(m_device);
 
     vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
+    vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentQueue);
 }
+
+void VkEngine::createSurface() { CHECK(SDL_Vulkan_CreateSurface(m_window, m_instance, nullptr, &m_surface)); }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VkEngine::debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

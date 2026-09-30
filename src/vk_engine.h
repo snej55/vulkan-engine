@@ -23,9 +23,9 @@
 struct QueueFamilyIndices
 {
     std::optional<uint32_t> graphicsFamily;
-    // std::optional<uint32_t> presentFamily;
+    std::optional<uint32_t> presentFamily;
 
-    bool complete() const { return graphicsFamily.has_value(); } //  && presentFamily.has_value(); }
+    bool complete() const { return graphicsFamily.has_value() && presentFamily.has_value(); }
 };
 
 class VkEngine
@@ -53,6 +53,7 @@ private:
     VkQueue m_graphicsQueue{VK_NULL_HANDLE};
     VkQueue m_presentQueue{VK_NULL_HANDLE};
     VkDevice m_device{VK_NULL_HANDLE};
+    VkSurfaceKHR m_surface{VK_NULL_HANDLE};
 
     void initWindow();
     void initVulkan();
@@ -60,6 +61,8 @@ private:
     void createInstance();
     void selectPhysicalDevice();
     void createLogicalDevice();
+    void createSurface();
+
     [[nodiscard]] bool deviceSuitable(VkPhysicalDevice device) const;
     [[nodiscard]] bool checkDeviceExtensionsSupport(VkPhysicalDevice device) const;
     [[nodiscard]] QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
