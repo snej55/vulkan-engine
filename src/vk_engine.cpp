@@ -340,7 +340,37 @@ void VkEngine::selectPhysicalDevice()
     return indices;
 }
 
-void VkEngine::createLogicalDevice() {}
+void VkEngine::createLogicalDevice()
+{
+    QueueFamilyIndices indices{findQueueFamilies(m_physicalDevice)};
+    m_queueFamilyIndices = indices;
+
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
+    std::set<uint32_t> uniqueQueueFamilies{indices.graphicsFamily.value()};
+
+    float queuePriority{1.0f};
+    for (uint32_t queueFamily : uniqueQueueFamilies)
+    {
+        VkDeviceQueueCreateInfo queueCI{
+            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            .queueFamilyIndex = queueFamily,
+            .queueCount = 1,
+            .pQueuePriorities = &queuePriority};
+    }
+
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamicStateFeatures{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT,
+        .extendedDynamicState = VK_TRUE};
+    VkPhysicalDeviceVulkan13Features features13{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+        .pNext = &dynamicStateFeatures,
+        .dynamicRendering = VK_TRUE};
+
+    VkPhysicalDeviceVulkan11Features features11{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+        .pNext = &features13,
+        .shaderDrawParameters = VK_TRUE};
+}
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VkEngine::debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

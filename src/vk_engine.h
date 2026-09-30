@@ -49,6 +49,9 @@ private:
 
     VkInstance m_instance{VK_NULL_HANDLE};
     VkPhysicalDevice m_physicalDevice{VK_NULL_HANDLE};
+    QueueFamilyIndices m_queueFamilyIndices;
+    VkQueue m_graphicsQueue{VK_NULL_HANDLE};
+    VkQueue m_presentQueue{VK_NULL_HANDLE};
 
     void initWindow();
     void initVulkan();
