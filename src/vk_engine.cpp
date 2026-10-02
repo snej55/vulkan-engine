@@ -426,6 +426,46 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VkEngine::debugCallback(
     return VK_FALSE;
 }
 
+[[nodiscard]] SwapchainSupportDetails VkEngine::checkSwapchainSupport(VkPhysicalDevice device) const
+{
+    SwapchainSupportDetails details{};
+    VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &details.capabilities));
+
+    uint32_t formatCount;
+    VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr));
+
+    if (formatCount != 0)
+    {
+        details.formats.resize(formatCount);
+        VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, details.formats.data()));
+    }
+
+    uint32_t presentModeCount;
+    VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, nullptr));
+
+    if (presentModeCount != 0)
+    {
+        details.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, details.presentModes.data());
+    }
+
+    return details;
+}
+
+[[nodiscard]] VkSurfaceFormatKHR
+VkEngine::selectSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats) const
+{
+    for (const VkSurfaceFormatKHR& format : formats)
+    {
+        if (format.format == VK_FORMAT_R8G8B8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        {
+            return format;
+        }
+    }
+
+    return formats[0];
+}
+
 void VkEngine::setupDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;

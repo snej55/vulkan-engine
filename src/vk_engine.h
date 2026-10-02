@@ -28,6 +28,13 @@ struct QueueFamilyIndices
     bool complete() const { return graphicsFamily.has_value() && presentFamily.has_value(); }
 };
 
+struct SwapchainSupportDetails
+{
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats{};
+    std::vector<VkPresentModeKHR> presentModes{};
+};
+
 class VkEngine
 {
 public:
@@ -62,6 +69,7 @@ private:
     void selectPhysicalDevice();
     void createLogicalDevice();
     void createSurface();
+    void createSwapchain();
 
     [[nodiscard]] bool deviceSuitable(VkPhysicalDevice device) const;
     [[nodiscard]] bool checkDeviceExtensionsSupport(VkPhysicalDevice device) const;
@@ -69,6 +77,9 @@ private:
 
     [[nodiscard]] std::vector<std::string> enumerateInstanceLayers();
     [[nodiscard]] std::vector<std::string> enumerateInstanceExtensions();
+
+    [[nodiscard]] SwapchainSupportDetails checkSwapchainSupport(VkPhysicalDevice device) const;
+    [[nodiscard]] VkSurfaceFormatKHR selectSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats) const;
 
     // ----------- validation layers ----------- //
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
