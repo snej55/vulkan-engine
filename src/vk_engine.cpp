@@ -406,24 +406,49 @@ void VkEngine::createLogicalDevice()
 
 void VkEngine::createSurface() { CHECK(SDL_Vulkan_CreateSurface(m_window, m_instance, nullptr, &m_surface)); }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL VkEngine::debugCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData)
+void VkEngine::createSwapchain()
 {
-    std::string colorCode{BEGIN_LOG};
-    if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    SwapchainSupportDetails details{checkSwapchainSupport(m_physicalDevice)};
+    VkSurfaceFormatKHR surfaceFormat{selectSwapchainSurfaceFormat(details.formats)};
+    VkPresentModeKHR presentMode{selectSwapchainPresentMode(details.presentModes)};
+    VkExtent2D extent{selectSwapExtent(details.capabilities)};
+
+    uint32_t imageCount{details.capabilities.minImageCount + 1};
+    if (details.capabilities.maxImageCount > 0 && imageCount > details.capabilities.maxImageCount)
     {
-        colorCode = BEGIN_ERROR;
-    }
-    else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
-    {
-        colorCode = BEGIN_WARNING;
+        imageCount = details.capabilities.maxImageCount;
     }
 
-    fmt::println(stderr, "{}Validation layer: {}{}", colorCode, pCallbackData->pMessage, END_LOG);
-    return VK_FALSE;
+    VkSwapchainCreateInfoKHR createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = m_surface;
+    // image details
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = surfaceFormat.format;
+    createInfo.imageColorSpace = surfaceFormat.colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = 1; // amount of layers each image has
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    QueueFamilyIndices indices{findQueueFamilies(m_physicalDevice)};
+    // must survive longer so not in condition scope
+    uint32_t queueFamilyIndices[]{indices.graphicsFamily.value(), indices.presentFamily.value()};
+
+    if (indices.graphicsFamily != indices.presentFamily)
+    {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+    }
+    else
+    {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.queueFamilyIndexCount = 0;
+        createInfo.pQueueFamilyIndices = nullptr;
+    }
+
+    createInfo.preTransform = details.capabilities.currentTransform;
+    // createInfo.compositeAlpha = VK_COMPO
 }
 
 [[nodiscard]] SwapchainSupportDetails VkEngine::checkSwapchainSupport(VkPhysicalDevice device) const
@@ -464,6 +489,56 @@ VkEngine::selectSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& fo
     }
 
     return formats[0];
+}
+
+[[nodiscard]] VkPresentModeKHR
+VkEngine::selectSwapchainPresentMode(const std::vector<VkPresentModeKHR>& presentModes) const
+{
+    for (const auto& pm : presentModes)
+    {
+        if (pm == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            return pm;
+        }
+    }
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+[[nodiscard]] VkExtent2D VkEngine::selectSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const
+{
+    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+    {
+        return capabilities.currentExtent;
+    }
+    int width, height;
+    SDL_GetWindowSize(m_window, &width, &height);
+
+    VkExtent2D extent{static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+
+    extent.width = std::clamp(extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+    extent.height = std::clamp(extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+    return extent;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL VkEngine::debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData)
+{
+    std::string colorCode{BEGIN_LOG};
+    if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    {
+        colorCode = BEGIN_ERROR;
+    }
+    else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    {
+        colorCode = BEGIN_WARNING;
+    }
+
+    fmt::println(stderr, "{}Validation layer: {}{}", colorCode, pCallbackData->pMessage, END_LOG);
+    return VK_FALSE;
 }
 
 void VkEngine::setupDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
