@@ -448,7 +448,14 @@ void VkEngine::createSwapchain()
     }
 
     createInfo.preTransform = details.capabilities.currentTransform;
-    // createInfo.compositeAlpha = VK_COMPO
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = presentMode;
+    createInfo.clipped = VK_TRUE;
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+    VK_CHECK(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain));
+
+    fmt::println("Created swap chain: {} * {}", extent.width, extent.height);
 }
 
 [[nodiscard]] SwapchainSupportDetails VkEngine::checkSwapchainSupport(VkPhysicalDevice device) const

@@ -61,6 +61,7 @@ private:
     VkQueue m_presentQueue{VK_NULL_HANDLE};
     VkDevice m_device{VK_NULL_HANDLE};
     VkSurfaceKHR m_surface{VK_NULL_HANDLE};
+    VkSwapchainKHR m_swapchain{VK_NULL_HANDLE};
 
     void initWindow();
     void initVulkan();
