@@ -413,11 +413,7 @@ void VkEngine::createSwapchain()
     VkPresentModeKHR presentMode{selectSwapchainPresentMode(details.presentModes)};
     VkExtent2D extent{selectSwapExtent(details.capabilities)};
 
-    uint32_t imageCount{details.capabilities.minImageCount + 1};
-    if (details.capabilities.maxImageCount > 0 && imageCount > details.capabilities.maxImageCount)
-    {
-        imageCount = details.capabilities.maxImageCount;
-    }
+    uint32_t imageCount = chooseSwapMinImageCount(details.capabilities);
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -456,6 +452,16 @@ void VkEngine::createSwapchain()
     VK_CHECK(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain));
 
     fmt::println("Created swap chain: {} * {}", extent.width, extent.height);
+}
+
+[[nodiscard]] uint32_t VkEngine::chooseSwapMinImageCount(const VkSurfaceCapabilitiesKHR& capabilities) const
+{
+    uint32_t imageCount{std::max(capabilities.minImageCount, 3u)};
+    if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
+    {
+        imageCount = capabilities.maxImageCount;
+    }
+    return imageCount;
 }
 
 [[nodiscard]] SwapchainSupportDetails VkEngine::checkSwapchainSupport(VkPhysicalDevice device) const

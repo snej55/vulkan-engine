@@ -84,6 +84,8 @@ private:
     [[nodiscard]] VkPresentModeKHR selectSwapchainPresentMode(const std::vector<VkPresentModeKHR>& presentModes) const;
     [[nodiscard]] VkExtent2D selectSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
+    [[nodiscard]] uint32_t chooseSwapMinImageCount(const VkSurfaceCapabilitiesKHR& capabilities) const;
+
     // ----------- validation layers ----------- //
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
