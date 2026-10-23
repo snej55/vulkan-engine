@@ -273,22 +273,49 @@ void Context::createSurface()
 
 void Context::selectPhysicalDevice()
 {
-
-    fmt::println("Selecting physical device...");
     uint32_t physicalDeviceCount{0};
     VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &physicalDeviceCount, nullptr));
     CHECK((physicalDeviceCount != 0));
     std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
     VK_CHECK(vkEnumeratePhysicalDevices(m_instance, &physicalDeviceCount, physicalDevices.data()));
 
+    std::multimap<int, VkPhysicalDevice> options{};
     for (const VkPhysicalDevice& device : physicalDevices)
     {
-        if (deviceSuitable(device))
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+        VkPhysicalDeviceFeatures deviceFeatures;
+        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+        int score{0};
+
+        switch (deviceProperties.deviceType)
         {
-            m_physicalDevice = device;
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+            score += 1000;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+            score += 900;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+            score += 800;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_CPU:
+            score += 700;
+            break;
+        default:
             break;
         }
+
+        score += static_cast<int>(deviceProperties.limits.maxImageDimension2D);
+        if (!deviceSuitable(device))
+            continue;
+
+        options.insert(std::make_pair(score, device));
+        // fmt::println("\t{}", deviceProperties.deviceName);
     }
+
+    CHECK((!options.empty() && options.rbegin()->first > 0))
+    m_physicalDevice = options.rbegin()->second;
 
     CHECK((m_physicalDevice != VK_NULL_HANDLE));
 
@@ -302,7 +329,9 @@ void Context::selectPhysicalDevice()
 
 void Context::createLogicalDevice()
 {
+#ifdef _DEBUG
     fmt::println("Creating logical device...");
+#endif
     QueueFamilyIndices indices{findQueueFamilies(m_physicalDevice)};
     m_queueFamilyIndices = indices;
 
@@ -412,7 +441,9 @@ void Context::createSwapchain()
 
     VK_CHECK(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain));
 
+#ifdef _DEBUG
     fmt::println("Created swap chain: {} * {}", extent.width, extent.height);
+#endif
 
     VK_CHECK(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, nullptr));
     m_swapchainImages.resize(imageCount);
@@ -473,7 +504,9 @@ void Context::createAllocator()
     allocatorCI.pVulkanFunctions = &vkFunctions;
     vmaCreateAllocator(&allocatorCI, &m_allocator);
 
+#ifdef _DEBUG
     fmt::println("Created VMA allocator!");
+#endif
 }
 
 void Context::free()
@@ -563,10 +596,9 @@ void Context::free()
 [[nodiscard]] bool Context::deviceSuitable(VkPhysicalDevice device) const
 {
 
+#ifdef _DEBUG
     fmt::println("Checking if device is suitable...");
-    QueueFamilyIndices indices{findQueueFamilies(device)};
-
-    const bool extensionsSupported(checkDeviceExtensionsSupport(device));
+#endif
 
     bool swapChainValid{false};
     if (extensionsSupported)
@@ -574,7 +606,28 @@ void Context::free()
         SwapChainSupportDetails details{checkSwapchainSupport(device)};
         swapChainValid = !details.formats.empty() && !details.presentModes.empty();
     }
-    return indices.complete() && extensionsSupported && swapChainValid;
+    if (!swapChainValid)
+        return false;
+
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    if (!deviceFeatures.geometryShader) // application requires geometry shaders support
+        return false;
+
+    if (!(deviceProperties.apiVersion >= VK_API_VERSION_1_3)) // we need at least 1.3
+        return false;
+
+    if (!checkDeviceExtensionsSupport(device))
+        return false;
+
+    QueueFamilyIndices indices{findQueueFamilies(device)};
+    if (!indices.complete())
+        return false;
+
+    return true;
 }
 
 [[nodiscard]] bool Context::checkDeviceExtensionsSupport(VkPhysicalDevice device) const

@@ -44,6 +44,13 @@ void VkEngine::free()
         vkDestroyDevice(m_device, nullptr);
         vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
         */
+
+    fmt::println("About to free swapchain!");
+    freeSwapchain();
+    fmt::println("Freed swapchain!");
+
+    vkDestroyDevice(m_device, nullptr);
+    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkDestroyInstance(m_instance, nullptr);
 
     SDL_DestroyWindow(m_window);
@@ -68,6 +75,8 @@ void VkEngine::initVulkan()
     createSurface();
     selectPhysicalDevice();
     createLogicalDevice();
+
+    createSwapchain();
 }
 
 void VkEngine::createInstance()
@@ -452,6 +461,21 @@ void VkEngine::createSwapchain()
     VK_CHECK(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain));
 
     fmt::println("Created swap chain: {} * {}", extent.width, extent.height);
+
+    VK_CHECK(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, nullptr));
+    m_swapchainImages.resize(imageCount);
+    VK_CHECK(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, m_swapchainImages.data()));
+}
+
+void VkEngine::freeSwapchain()
+{
+    for (VkImage& image : m_swapchainImages)
+    {
+        vkDestroyImage(m_device, image, nullptr);
+    }
+    // vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+    // m_swapchain = VK_NULL_HANDLE;
+    // m_swapchainImages.clear();
 }
 
 [[nodiscard]] uint32_t VkEngine::chooseSwapMinImageCount(const VkSurfaceCapabilitiesKHR& capabilities) const
