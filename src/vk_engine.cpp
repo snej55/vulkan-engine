@@ -464,16 +464,24 @@ void VkEngine::createSwapchain()
 
     VK_CHECK(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, nullptr));
     m_swapchainImages.resize(imageCount);
-    VK_CHECK(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, m_swapchainImages.data()));
+    std::vector<VkImage> tempSwapchainImages(imageCount);
+    VK_CHECK(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, tempSwapchainImages.data()));
+    std::transform(
+        tempSwapchainImages.begin(),
+        tempSwapchainImages.end(),
+        m_swapchainImages.begin(),
+        [](VkImage image)
+        { return SwapchainImage{.m_image = image, .m_view = VK_NULL_HANDLE, .m_semaphore = VK_NULL_HANDLE}; });
 }
 
 void VkEngine::freeSwapchain()
 {
-    for (VkImage& image : m_swapchainImages)
+    for (SwapchainImage& image : m_swapchainImages)
     {
-        vkDestroyImage(m_device, image, nullptr);
+        vkDestroyImageView(m_device, image.m_view, nullptr);
+        vkDestroySemaphore(m_device, image.m_semaphore, nullptr);
     }
-    // vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+    vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
     // m_swapchain = VK_NULL_HANDLE;
     // m_swapchainImages.clear();
 }

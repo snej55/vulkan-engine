@@ -35,6 +35,13 @@ struct SwapchainSupportDetails
     std::vector<VkPresentModeKHR> presentModes{};
 };
 
+struct SwapchainImage
+{
+    VkImage m_image;
+    VkImageView m_view;
+    VkSemaphore m_semaphore;
+};
+
 class VkEngine
 {
 public:
@@ -62,7 +69,7 @@ private:
     VkDevice m_device{VK_NULL_HANDLE};
     VkSurfaceKHR m_surface{VK_NULL_HANDLE};
     VkSwapchainKHR m_swapchain{VK_NULL_HANDLE};
-    std::vector<VkImage> m_swapchainImages;
+    std::vector<SwapchainImage> m_swapchainImages;
 
     void initWindow();
     void initVulkan();
