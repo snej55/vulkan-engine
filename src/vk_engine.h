@@ -70,6 +70,8 @@ private:
     VkSurfaceKHR m_surface{VK_NULL_HANDLE};
     VkSwapchainKHR m_swapchain{VK_NULL_HANDLE};
     std::vector<SwapchainImage> m_swapchainImages;
+    VkFormat m_swapchainImageFormat;
+    VkExtent2D m_swapchainExtent;
 
     void initWindow();
     void initVulkan();
@@ -80,6 +82,7 @@ private:
     void createSurface();
     void createSwapchain();
     void freeSwapchain();
+    void createImageViews();
 
     [[nodiscard]] bool deviceSuitable(VkPhysicalDevice device) const;
     [[nodiscard]] bool checkDeviceExtensionsSupport(VkPhysicalDevice device) const;

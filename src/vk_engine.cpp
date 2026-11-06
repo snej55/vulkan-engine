@@ -45,9 +45,7 @@ void VkEngine::free()
         vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
         */
 
-    fmt::println("About to free swapchain!");
     freeSwapchain();
-    fmt::println("Freed swapchain!");
 
     vkDestroyDevice(m_device, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
@@ -77,6 +75,7 @@ void VkEngine::initVulkan()
     createLogicalDevice();
 
     createSwapchain();
+    createImageViews();
 }
 
 void VkEngine::createInstance()
@@ -472,6 +471,9 @@ void VkEngine::createSwapchain()
         m_swapchainImages.begin(),
         [](VkImage image)
         { return SwapchainImage{.m_image = image, .m_view = VK_NULL_HANDLE, .m_semaphore = VK_NULL_HANDLE}; });
+
+    m_swapchainImageFormat = surfaceFormat.format;
+    m_swapchainExtent = extent;
 }
 
 void VkEngine::freeSwapchain()
@@ -484,6 +486,44 @@ void VkEngine::freeSwapchain()
     vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
     // m_swapchain = VK_NULL_HANDLE;
     // m_swapchainImages.clear();
+}
+
+void VkEngine::createImageViews()
+{
+    bool viewsExist{false};
+    for (const SwapchainImage& image : m_swapchainImages)
+    {
+        viewsExist = viewsExist | !(image.m_view == VK_NULL_HANDLE);
+    }
+    CHECK(!(viewsExist));
+
+    VkImageViewCreateInfo imageCI{};
+    imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageCI.image = VK_NULL_HANDLE;
+    imageCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageCI.format = m_swapchainImageFormat;
+
+    imageCI.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageCI.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageCI.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageCI.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+    imageCI.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageCI.subresourceRange.baseMipLevel = 0;
+    imageCI.subresourceRange.levelCount = 1;
+    imageCI.subresourceRange.baseArrayLayer = 0;
+    imageCI.subresourceRange.layerCount = 1;
+
+    for (std::size_t i{0}; i < m_swapchainImages.size(); ++i)
+    {
+        imageCI.image = m_swapchainImages[i].m_image;
+
+        VK_CHECK(vkCreateImageView(m_device, &imageCI, nullptr, &m_swapchainImages[i].m_view));
+    }
+
+#ifdef _DEBUG
+    fmt::println("Created {} image views", m_swapchainImages.size());
+#endif
 }
 
 [[nodiscard]] uint32_t VkEngine::chooseSwapMinImageCount(const VkSurfaceCapabilitiesKHR& capabilities) const
