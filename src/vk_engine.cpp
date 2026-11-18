@@ -76,6 +76,8 @@ void VkEngine::initVulkan()
 
     createSwapchain();
     createImageViews();
+
+    createGraphicsPipeline();
 }
 
 void VkEngine::createInstance()
@@ -525,6 +527,8 @@ void VkEngine::createImageViews()
     fmt::println("Created {} image views", m_swapchainImages.size());
 #endif
 }
+
+void VkEngine::createGraphicsPipeline() {}
 
 [[nodiscard]] uint32_t VkEngine::chooseSwapMinImageCount(const VkSurfaceCapabilitiesKHR& capabilities) const
 {

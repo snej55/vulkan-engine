@@ -83,6 +83,7 @@ private:
     void createSwapchain();
     void freeSwapchain();
     void createImageViews();
+    void createGraphicsPipeline();
 
     [[nodiscard]] bool deviceSuitable(VkPhysicalDevice device) const;
     [[nodiscard]] bool checkDeviceExtensionsSupport(VkPhysicalDevice device) const;
