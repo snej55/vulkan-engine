@@ -68,26 +68,47 @@ file(GLOB_RECURSE SHADER_SLANG_SOURCES "${PROJECT_SOURCE_DIR}/src/shaders/*.slan
   # list(APPEND SPV_OUTPUTS ${SPIRV_OUTPUT})
 # endforeach()
 #
-
-function (add_slang_shader_target TARGET)
-  cmake_parse_arguments( "SHADER" "" "" "SOURCES", ${ARGN})
-  set(SHADERS_DIR ${CMAKE_CURRENT_LIST_DIR}/shaders)
+#
+foreach(SHADER ${SHADER_SLANG_SOURCES})
+  message(STATUS "Building ${SHADER}")
+  get_filename_component(SHADER_NAME ${SHADER} NAME)
+  set(SPIRV_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/data/shaders/${SHADER_NAME}.spv")
   set(ENTRY_POINTS -entry vertMain -entry fragMain)
-  add_custom_command (
-    OUTPUT ${SHADERS_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADERS_DIR}
-  )
-  add_custom_command (
-    OUTPUT ${SHADERS_DIR}/slang.spv
-    COMMAND ${SLANGC_EXECUTABLE} ${SHADER_SOURCES} -target spirv -profile spirv_1_4 -emit-spirv_directly -fvk-use-entrypoint-name ${ENTRY_POINTS} -o slang.spv
-    WORKING_DIRECTORY ${SHADERS_DIR}
-    DEPENDS ${SHADERS_DIR} ${SHADER_SOURCES} ${SLANGC_EXECUTABLE}
-    VERBATIM
-  )
-endfunction()
+  add_custom_command(
+    OUTPUT ${SPIRV_OUTPUT}
+    COMMAND ${SLANGC_EXECUTABLE} ${SHADER} -target spirv -profile spirv_1_4 -emit-spirv_directly -fvk-use-entrypoint-name ${ENTRY_POINTS} -o ${SPIRV_OUTPUT}
+    DEPENDS ${SHADER})
+  list(APPEND SPV_OUTPUTS ${SPIRV_OUTPUT})
+endforeach()
 
-add_slang_shader_target(Shaders SOURCES ${SHADER_SLANG_SOURCES})
-add_dependencies(${NAME} Shaders)
+add_custom_target(
+  Shaders
+  DEPENDS ${SPV_OUTPUTS}
+)
+
+# function (add_slang_shader_target TARGET)
+  # message(STATUS TARGET)
+  # cmake_parse_arguments( "SHADER" "" "" "SOURCES", ${ARGN})
+  # set(SHADERS_DIR ${CMAKE_CURRENT_LIST_DIR}/shaders)
+  # set(ENTRY_POINTS -entry vertMain -entry fragMain)
+  # add_custom_command (
+    # OUTPUT ${SHADERS_DIR}
+    # COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADERS_DIR}
+  # )
+  # add_custom_command (
+    # OUTPUT ${SHADERS_DIR}/slang.spv
+    # COMMAND ${SLANGC_EXECUTABLE} ${SHADER_SOURCES} -target spirv -profile spirv_1_4 -emit-spirv_directly -fvk-use-entrypoint-name ${ENTRY_POINTS} -o slang.spv
+    # WORKING_DIRECTORY ${SHADERS_DIR}
+    # DEPENDS ${SHADERS_DIR} ${SHADER_SOURCES} ${SLANGC_EXECUTABLE}
+    # VERBATIM
+  # )
+# endfunction()
+
+# add_custom_target(Shaders D)
+
+# add_slang_shader_target(SHADER_TARGET SOURCES ${SHADER_SLANG_SOURCES})
+# add_custom_target(Shaders)
+# add_dependencies(${NAME} Shaders)
 
 FetchContent_Declare(
     fmt
@@ -124,6 +145,7 @@ FetchContent_MakeAvailable(fmt)
 set(SOURCES main.cpp src/vulkan_impl.cpp src/vk_engine.h src/vk_engine.cpp)
 
 add_executable(${NAME} ${SOURCES})
+# add_dependencies(${NAME} ${SHADER_TARGET})
 target_sources(${NAME} PRIVATE ${SPV_OUTPUTS})
 
 target_compile_definitions(${NAME} PRIVATE VK_NO_PROTOTYPES VK_VERSION_1_3=1 VOLK_MAX_API_VERSION_1_3)
